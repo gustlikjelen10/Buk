@@ -441,8 +441,18 @@ async function fetchTodayOdds() {
         const found = extractCandidatesFromFixture(f, oddsData, taxFactor);
         candidates.push(...found);
         const bo = oddsData?.bookmakerOdds;
-        diag.push(`${f.participant1Name} - ${f.participant2Name} (${f.tournamentName ?? "?"}): ` +
-          (bo ? `bukmacherzy: ${Object.keys(bo).join(", ") || "brak"}` : `pola odpowiedzi: ${Object.keys(oddsData || {}).join(", ") || "brak"}`) +
+        const info = (slug) => {
+          const b = bo?.[slug];
+          if (!b) return `${slug}: brak`;
+          const pp = getMarket101Prices(b);
+          const mk = Object.keys(b.markets || {}).slice(0, 6).join("/") || "brak";
+          let t = `${slug}: aktywny=${b.bookmakerIsActive}, rynki=${mk}, 1X2=${pp ? "ok" : "NIE"}`;
+          if (!pp) t += ` raw101=${JSON.stringify(b.markets?.["101"] ?? null).slice(0, 260)}`;
+          return t;
+        };
+        diag.push(`${f.participant1Name} - ${f.participant2Name}: ` +
+          (bo ? [info("pinnacle+30"), info("efortuna.pl"), info("superbet.pl")].join(" | ")
+              : `pola odpowiedzi: ${Object.keys(oddsData || {}).join(", ") || "brak"}`) +
           ` -> typów: ${found.length}`);
       } else {
         diag.push(`${f.participant1Name} - ${f.participant2Name}: HTTP ${oddsRes.status}`);
