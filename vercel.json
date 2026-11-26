@@ -1,0 +1,5 @@
+{
+  "functions": {
+    "api/tips.mjs": { "maxDuration": 60 }
+  }
+}
