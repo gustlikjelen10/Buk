@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Asystent dr. Krzywkowskiego — Fortuna & Superbet</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --card: #1e293b;
+    --card-2: #0b1220;
+    --text: #f8fafc;
+    --muted: #94a3b8;
+    --accent: #38bdf8;
+    --green: #22c55e;
+    --red: #ef4444;
+    --amber: #f59e0b;
+    --border: #334155;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+    padding: 20px;
+  }
+  .container { max-width: 1120px; margin: 0 auto; }
+  h1, h2, h3 { margin-top: 0; }
+  .subtitle { color: var(--muted); margin-top: -8px; margin-bottom: 20px; font-size: 0.95rem; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; margin-bottom: 20px; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 18px; }
+  label { display: block; font-size: 0.85rem; color: var(--muted); margin-bottom: 4px; margin-top: 10px; }
+  input, select {
+    width: 100%;
+    padding: 9px 11px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--card-2);
+    color: var(--text);
+    font-size: 0.95rem;
+  }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: end; }
+  .row > * { flex: 1; min-width: 130px; }
+  button {
+    cursor: pointer;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: opacity 0.15s;
+  }
+  button:hover { opacity: 0.9; }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-primary { background: var(--accent); color: #082f49; }
+  .btn-secondary { background: #334155; color: var(--text); }
+  .btn-green { background: var(--green); color: #052e16; }
+  .btn-red { background: var(--red); color: #fff; }
+  .btn-amber { background: var(--amber); color: #451a03; }
+  .btn-sm { padding: 5px 9px; font-size: 0.8rem; }
+  .badge { display: inline-block; padding: 3px 8px; border-radius: 999px; font-size: 0.78rem; font-weight: 700; }
+  .badge-pos { background: rgba(34, 197, 94, 0.18); color: var(--green); }
+  .badge-neg { background: rgba(239, 68, 68, 0.18); color: var(--red); }
+  .badge-info { background: rgba(56, 189, 248, 0.18); color: var(--accent); }
+  .quote { border-left: 3px solid var(--accent); padding-left: 12px; color: var(--muted); font-style: italic; margin: 10px 0; }
+  .status { margin-top: 10px; font-size: 0.88rem; color: var(--accent); white-space: pre-wrap; }
+  .error { color: var(--red); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.88rem; margin-top: 10px; }
+  th, td { text-align: left; padding: 9px 8px; border-bottom: 1px solid var(--border); }
+  th { color: var(--muted); font-weight: 600; }
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 14px; }
+  .stat-box { background: var(--card-2); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+  .stat-label { font-size: 0.78rem; color: var(--muted); }
+  .stat-val { font-size: 1.2rem; font-weight: 700; margin-top: 2px; }
+  .overflow-x { overflow-x: auto; }
+  .muted { color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Filtr dr. Krzywkowskiego — Fortuna & Superbet</h1>
+  <p class="subtitle">Vercel Serverless API + baza w chmurze Supabase · Budżet 2–5 zł</p>
+
+  <div class="card" style="margin-bottom: 20px;">
+    <h2>1. Pobieranie oferty dnia</h2>
+    <div class="row">
+      <div>
+        <label for="stake">Stawka na kupon (zł)</label>
+        <input id="stake" type="number" min="2" max="100" step="0.5" value="2" />
+      </div>
+      <div>
+        <label for="taxMode">Podatek obrotowy</label>
+        <select id="taxMode">
+          <option value="0.88" selected>Standardowy 12% (0.88)</option>
+          <option value="1.00">Promocja bez podatku (1.00)</option>
+        </select>
+      </div>
+      <div>
+        <label for="maxMatches">Maks. meczów na klik (limit API)</label>
+        <input id="maxMatches" type="number" min="1" max="15" value="6" />
+      </div>
+    </div>
+    <div class="row">
+      <div>
+        <label for="minEv">Min. EV trybu Ortodoksyjnego (%)</label>
+        <input id="minEv" type="number" step="0.5" value="1" />
+      </div>
+      <div>
+        <label for="maxOver">Maks. marża Pinnacle (%)</label>
+        <input id="maxOver" type="number" step="0.5" value="5" />
+      </div>
+      <div>
+        <label for="appToken">Token aplikacji (APP_TOKEN)</label>
+        <input id="appToken" type="password" placeholder="ten sam co na Vercelu" />
+      </div>
+      <div>
+        <label for="dailyMode">Kupon Dnia wybieraj wg</label>
+        <select id="dailyMode" onchange="if (lastCandidates.length) renderResults(lastCandidates)">
+          <option value="ev" selected>Najwyższego EV</option>
+          <option value="prob">Największej szansy na wygraną (EV ≥ −10%)</option>
+        </select>
+      </div>
+    </div>
+    <div class="row" style="margin-top: 14px;">
+      <button class="btn-primary" id="btnFetch" onclick="fetchTodayOdds()">Pobierz aktualne kursy na dziś</button>
+      <button class="btn-secondary" onclick="checkAccount()">Sprawdź limit OddsPapi (0 kredytów)</button>
+      <button class="btn-amber" onclick="fetchTips()">Dodaj typy z sieci</button>
+    </div>
+    <div id="statusBox" class="status"></div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <span class="badge badge-info">TRYB 1</span>
+      <h2 style="margin-top: 8px;">Ortodoksyjny Doktor</h2>
+      <p class="muted" style="font-size: 0.9rem;">
+        Przepuszcza zakład wyłącznie przy dodatnim +EV (> 0%) po odjęciu marży Pinnacle i 12% podatku.
+      </p>
+      <div id="orthoResult">
+        <p class="muted">Kliknij „Pobierz aktualne kursy na dziś”, aby policzyć rynek.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <span class="badge badge-info">TRYB 2</span>
+      <h2 style="margin-top: 8px;">Kupon Dnia (zabawa 2–5 zł)</h2>
+      <p class="muted" style="font-size: 0.9rem;">
+        Zawsze wskazuje 1 zakład o najwyższym EV spośród przeanalizowanych dziś spotkań w Fortunie i Superbecie.
+      </p>
+      <div id="dailyResult">
+        <p class="muted">Kliknij „Pobierz aktualne kursy na dziś”, aby wyłonić typ dnia.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom: 20px;">
+    <span class="badge badge-info">TRYB 3</span>
+    <h2 style="margin-top: 8px;">Kupon Logiczny</h2>
+    <p class="muted" style="font-size: 0.9rem;">Szansa ≥ 50%, kurs 1,60–2,40, EV ≥ −8% oraz zgodność z typami z sieci (≥ 2 źródła). Bez pobranych typów liczy tylko matematykę.</p>
+    <div id="logicalResult"><p class="muted">Pobierz kursy, potem kliknij „Dodaj typy z sieci”.</p></div>
+  </div>
+
+  <div class="card" style="margin-bottom: 20px;">
+    <h2>2. Przeanalizowane rynki 1X2 (najwyższe EV na górze)</h2>
+    <div class="overflow-x">
+      <table>
+        <thead>
+          <tr>
+            <th>Mecz / Liga</th>
+            <th>Bukmacher</th>
+            <th>Typ</th>
+            <th>Kurs PL</th>
+            <th>Pinnacle (fair p)</th>
+            <th>EV</th>
+            <th>Akcja</th>
+          </tr>
+        </thead>
+        <tbody id="candidatesBody">
+          <tr><td colspan="7" class="muted">Brak danych — pobierz kursy albo użyj kalkulatora ręcznego poniżej.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom: 20px;">
+    <h2>3. Szybka kalkulacja ręczna (bez zużycia limitu API)</h2>
+    <div class="row">
+      <div style="flex: 2;">
+        <label for="mName">Nazwa meczu</label>
+        <input id="mName" type="text" placeholder="np. Legia - Lech" />
+      </div>
+      <div>
+        <label for="mBookie">Bukmacher</label>
+        <select id="mBookie">
+          <option value="Fortuna">Fortuna</option>
+          <option value="Superbet">Superbet</option>
+        </select>
+      </div>
+      <div>
+        <label for="mPick">Typ (1 / X / 2)</label>
+        <select id="mPick">
+          <option value="0">1 (Gospodarz)</option>
+          <option value="1">X (Remis)</option>
+          <option value="2">2 (Gość)</option>
+        </select>
+      </div>
+      <div>
+        <label for="mPlOdds">Kurs u bukmachera PL</label>
+        <input id="mPlOdds" type="number" step="0.01" placeholder="np. 2.15" />
+      </div>
+    </div>
+    <div class="row">
+      <div>
+        <label for="mPin1">Kurs Pinnacle 1</label>
+        <input id="mPin1" type="number" step="0.01" placeholder="np. 2.10" />
+      </div>
+      <div>
+        <label for="mPinX">Kurs Pinnacle X</label>
+        <input id="mPinX" type="number" step="0.01" placeholder="np. 3.45" />
+      </div>
+      <div>
+        <label for="mPin2">Kurs Pinnacle 2</label>
+        <input id="mPin2" type="number" step="0.01" placeholder="np. 3.60" />
+      </div>
+      <div>
+        <button class="btn-secondary" style="width: 100%;" onclick="evaluateManual()">Przelicz ręcznie</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="row" style="justify-content: space-between; align-items: center; margin-bottom: 10px;">
+      <h2 style="margin: 0;">4. Historia kuponów w chmurze (Supabase)</h2>
+      <div style="flex: 0; display: flex; gap: 8px; flex-wrap: wrap;">
+        <button class="btn-secondary btn-sm" onclick="loadHistory()">Odśwież</button>
+        <button class="btn-secondary btn-sm" onclick="exportCSV()">Eksportuj CSV</button>
+        <button class="btn-red btn-sm" onclick="clearHistory()">Wyczyść wszystko</button>
+      </div>
+    </div>
+    <div id="historyStatus" class="status" style="margin-top: 0; margin-bottom: 10px;"></div>
+    <div class="stats" id="statsBox"></div>
+    <div class="overflow-x">
+      <table>
+        <thead>
+          <tr>
+            <th>Data</th>
+            <th>Tryb</th>
+            <th>Bukmacher</th>
+            <th>Mecz & Typ</th>
+            <th>Kurs</th>
+            <th>EV</th>
+            <th>Stawka</th>
+            <th>Wynik</th>
+            <th>Bilans</th>
+            <th>Rozlicz</th>
+          </tr>
+        </thead>
+        <tbody id="historyBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+const TOP_LEAGUES = ["premier league", "champions league", "ekstraklasa", "la liga",
+  "bundesliga", "serie a", "ligue 1", "europa league"];
+const OUTCOME_MAP = { "101": "1 (Gospodarz)", "102": "X (Remis)", "103": "2 (Gość)" };
+
+let lastCandidates = [];
+let cachedHistory = [];
+let tips = {};
+
+function tipFor(c) { return tips[String(c.match).toLowerCase()]; }
+function tipAgrees(c) {
+  const t = tipFor(c);
+  return !!(t && t.pick && String(c.pick).startsWith(String(t.pick)));
+}
+function tipBadge(c) {
+  const t = tipFor(c);
+  if (!t || !t.pick) return "";
+  const ok = tipAgrees(c);
+  return ` <span class="badge ${ok ? "badge-pos" : "badge-neg"}">${ok ? "✔" : "✖"} typerzy: ${esc(t.pick)} (${Number(t.sources) || 0})</span>`;
+}
+
+async function fetchTips() {
+  if (!lastCandidates.length) return setStatus("Najpierw pobierz kursy.", true);
+  const seen = new Map();
+  lastCandidates.forEach(c => { if (!seen.has(c.match)) seen.set(c.match, c.league); });
+  setStatus("Szukam typów w sieci (do ok. minuty)...");
+  try {
+    const res = await apiFetch("/api/tips", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ matches: [...seen].map(([name, league]) => ({ name, league })) })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(errMsg(data, res));
+    tips = {};
+    (data.tips || []).forEach(t => { tips[String(t.match).toLowerCase()] = t; });
+    renderResults(lastCandidates);
+    setStatus(`Typy z sieci pobrane dla ${Object.keys(tips).length} meczów.`);
+  } catch (err) {
+    setStatus(`Nie udało się pobrać typów: ${err.message}`, true);
+  }
+}
+
+function renderLogical(candidates) {
+  const el = document.getElementById("logicalResult");
+  const hasTips = Object.keys(tips).length > 0;
+  const rawStake = parseFloat(document.getElementById("stake").value);
+  const stake = Number.isFinite(rawStake) ? rawStake : 2;
+  const taxFactor = parseFloat(document.getElementById("taxMode").value);
+  const pool = candidates.map((c, i) => ({ c, i })).filter(({ c }) =>
+    c.fairProb >= 0.5 && c.plOdds >= 1.6 && c.plOdds <= 2.4 && c.ev >= -0.08 &&
+    (!hasTips || (tipAgrees(c) && (Number(tipFor(c).sources) || 0) >= 2)));
+  if (!pool.length) {
+    el.innerHTML = `<p class="muted">Dziś brak typu spełniającego wszystkie warunki${hasTips ? "" : " (typy z sieci niepobrane — liczy się tylko matematyka)"}.</p>`;
+    return;
+  }
+  const { c, i } = pool.reduce((a, b) => (b.c.ev > a.c.ev ? b : a));
+  const t = tipFor(c);
+  el.innerHTML = `
+    <p><span class="badge badge-pos">SZANSA ${(c.fairProb * 100).toFixed(1)}% · EV ${(c.ev * 100).toFixed(2)}%</span>${tipBadge(c)}</p>
+    <p><strong>${esc(c.match)}</strong> (${esc(c.league)})</p>
+    <p>Bukmacher: <strong>${esc(c.bookie)}</strong> · Typ: <strong>${esc(c.pick)}</strong> · Kurs: <strong>${c.plOdds.toFixed(2)}</strong></p>
+    <p class="muted" style="font-size:0.88rem;">Wygrana za ${stake.toFixed(2)} zł: <strong>${(stake * taxFactor * c.plOdds).toFixed(2)} zł</strong> · Oczekiwany wynik: <strong>${(stake * c.ev).toFixed(2)} zł</strong>${t && t.note ? " · " + esc(t.note) : ""}</p>
+    <button class="btn-green" onclick="saveBet(${i}, 'Kupon Logiczny')">Zapisz Kupon Logiczny (${stake.toFixed(2)} zł)</button>`;
+}
+
+function apiFetch(url, opts = {}) {
+  const token = document.getElementById("appToken").value;
+  return fetch(url, { ...opts, headers: { ...(opts.headers || {}), "x-app-token": token } });
+}
+
+window.addEventListener("DOMContentLoaded", () => {
+  const tokenInput = document.getElementById("appToken");
+  try { tokenInput.value = localStorage.getItem("appToken") || ""; } catch (e) {}
+  tokenInput.addEventListener("change", () => {
+    try { localStorage.setItem("appToken", tokenInput.value); } catch (e) {}
+    loadHistory();
+  });
+  loadHistory();
+});
+
+function esc(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function setStatus(msg, isError = false) {
+  const box = document.getElementById("statusBox");
+  box.textContent = msg;
+  box.className = isError ? "status error" : "status";
+}
+
+function setHistoryStatus(msg, isError = false) {
+  const box = document.getElementById("historyStatus");
+  box.textContent = msg;
+  box.className = isError ? "status error" : "status";
+}
+
+function errMsg(data, res) {
+  if (data && data.message) return data.message;
+  if (data && data.error) return data.error;
+  return `HTTP ${res.status}`;
+}
+
+function devig1X2(o1, ox, o2) {
+  const inv = [1 / o1, 1 / ox, 1 / o2];
+  const sum = inv[0] + inv[1] + inv[2];
+  return { "101": inv[0] / sum, "102": inv[1] / sum, "103": inv[2] / sum };
+}
+
+async function checkAccount() {
+  setStatus("Sprawdzam status konta OddsPapi...");
+  try {
+    const res = await apiFetch("/api/oddspapi?action=account");
+    const data = await res.json();
+    if (!res.ok) throw new Error(errMsg(data, res));
+    const limit = data.request_limit ?? "?";
+    const used = data.request_count ?? "?";
+    const left = (typeof limit === "number" && typeof used === "number") ? (limit - used) : "?";
+    setStatus(`Konto OddsPapi aktywne. Wykorzystano: ${used} / ${limit} zapytań (pozostało: ${left}).`);
+  } catch (err) {
+    setStatus(`Błąd: ${err.message}`, true);
+  }
+}
+
+async function fetchTodayOdds() {
+  const btn = document.getElementById("btnFetch");
+  btn.disabled = true;
+
+  const rawMax = parseInt(document.getElementById("maxMatches").value, 10);
+  const maxMatches = Number.isFinite(rawMax) ? Math.max(1, Math.min(15, rawMax)) : 6;
+  const taxFactor = parseFloat(document.getElementById("taxMode").value);
+
+  try {
+    setStatus("Krok 1/2: Pobieram dzisiejsze mecze piłki nożnej...");
+    const now = new Date();
+    const later = new Date(now.getTime() + 36 * 60 * 60 * 1000);
+    const fromStr = now.toISOString().slice(0, 19) + "Z";
+    const toStr = later.toISOString().slice(0, 19) + "Z";
+
+    const fxRes = await apiFetch(`/api/oddspapi?action=fixtures&from=${encodeURIComponent(fromStr)}&to=${encodeURIComponent(toStr)}`
+    );
+    const fixtures = await fxRes.json();
+    if (!fxRes.ok) throw new Error(errMsg(fixtures, fxRes));
+
+    if (!Array.isArray(fixtures)) {
+      setStatus("Nieoczekiwany format listy meczów.", true);
+      return;
+    }
+    if (fixtures.length === 0) {
+      setStatus("Brak nadchodzących meczów z kursami w najbliższych 36h.", true);
+      return;
+    }
+
+    fixtures.sort((a, b) => {
+      const aName = (a.tournamentName ?? "").toLowerCase();
+      const bName = (b.tournamentName ?? "").toLowerCase();
+      const aTop = TOP_LEAGUES.some(l => aName.includes(l)) ? 0 : 1;
+      const bTop = TOP_LEAGUES.some(l => bName.includes(l)) ? 0 : 1;
+      return aTop - bTop;
+    });
+
+    const selectedFixtures = fixtures.slice(0, maxMatches);
+    const candidates = [];
+
+    for (let i = 0; i < selectedFixtures.length; i++) {
+      const f = selectedFixtures[i];
+      setStatus(`Krok 2/2: Pobieram kursy (${i + 1}/${selectedFixtures.length}): ${f.participant1Name} - ${f.participant2Name}...`);
+      const oddsRes = await apiFetch(`/api/oddspapi?action=odds&fixtureId=${encodeURIComponent(f.fixtureId)}`);
+      if (oddsRes.ok) {
+        const oddsData = await oddsRes.json();
+        candidates.push(...extractCandidatesFromFixture(f, oddsData, taxFactor));
+      }
+      await new Promise(r => setTimeout(r, 250));
+    }
+
+    candidates.sort((a, b) => b.ev - a.ev);
+    lastCandidates = candidates;
+    renderResults(candidates);
+    setStatus(`Gotowe! Przeanalizowano ${selectedFixtures.length} meczów i znaleziono ${candidates.length} porównanych typów.`);
+  } catch (err) {
+    setStatus(`Nie udało się pobrać kursów: ${err.message}`, true);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function getMarket101Prices(bookieObj) {
+  if (!bookieObj) return null;
+  if (bookieObj.bookmakerIsActive === false) return null;
+  const m = bookieObj.markets ? bookieObj.markets["101"] : null;
+  if (!m || !m.outcomes) return null;
+
+  const p1 = m.outcomes["101"]?.players?.["0"];
+  const px = m.outcomes["102"]?.players?.["0"];
+  const p2 = m.outcomes["103"]?.players?.["0"];
+  if ([p1, px, p2].some(x => !x)) return null;
+  if ([p1, px, p2].some(x => x.active === false)) return null;
+  if ([p1, px, p2].some(x => x.price <= 1)) return null;
+  return { "101": p1.price, "102": px.price, "103": p2.price };
+}
+
+function extractCandidatesFromFixture(fixture, oddsData, taxFactor) {
+  const bo = oddsData?.bookmakerOdds ?? {};
+  const pinObj = bo["pinnacle+30"] ? bo["pinnacle+30"] : bo["pinnacle"];
+  const pinPrices = getMarket101Prices(pinObj);
+  if (!pinPrices) return [];
+
+  const over = (1 / pinPrices["101"] + 1 / pinPrices["102"] + 1 / pinPrices["103"] - 1) * 100;
+  const maxOver = parseFloat(document.getElementById("maxOver").value);
+  if (Number.isFinite(maxOver) && over > maxOver) return [];
+
+  const fairProbs = devig1X2(pinPrices["101"], pinPrices["102"], pinPrices["103"]);
+  const plBooks = [
+    { slug: "efortuna.pl", name: "Fortuna" },
+    { slug: "superbet.pl", name: "Superbet" }
+  ];
+
+  const out = [];
+  for (const pb of plBooks) {
+    const bookData = bo[pb.slug];
+    if (!bookData) continue;
+    if (bookData.bookmakerIsActive === false) continue;
+    const m = bookData.markets?.["101"]?.outcomes;
+    if (!m) continue;
+
+    for (const oid of ["101", "102", "103"]) {
+      const sel = m[oid]?.players?.["0"];
+      if (!sel) continue;
+      if (sel.active === false) continue;
+      if (!sel.price) continue;
+      if (sel.price < 1.5 || sel.price > 4.5) continue;
+
+      const ev = (fairProbs[oid] * taxFactor * sel.price) - 1;
+      out.push({
+        match: `${fixture.participant1Name} - ${fixture.participant2Name}`,
+        fixtureId: fixture.fixtureId,
+        league: fixture.tournamentName ?? "-",
+        bookie: pb.name,
+        pick: OUTCOME_MAP[oid],
+        plOdds: sel.price,
+        pinOdds: pinPrices[oid],
+        fairProb: fairProbs[oid],
+        ev: ev
+      });
+    }
+  }
+  return out;
+}
+
+function evaluateManual() {
+  const rawName = document.getElementById("mName").value.trim();
+  const match = rawName ? rawName : "Mecz ręczny";
+  const bookie = document.getElementById("mBookie").value;
+  const pickIdx = document.getElementById("mPick").value;
+  const oid = pickIdx === "0" ? "101" : (pickIdx === "1" ? "102" : "103");
+
+  const plOdds = parseFloat(document.getElementById("mPlOdds").value);
+  const p1 = parseFloat(document.getElementById("mPin1").value);
+  const px = parseFloat(document.getElementById("mPinX").value);
+  const p2 = parseFloat(document.getElementById("mPin2").value);
+  const taxFactor = parseFloat(document.getElementById("taxMode").value);
+
+  if (![plOdds, p1, px, p2].every(n => Number.isFinite(n) && n > 1)) {
+    return setStatus("Podaj poprawne kursy większe od 1.00 w trybie ręcznym.", true);
+  }
+
+  const fairProbs = devig1X2(p1, px, p2);
+  const pinMap = { "101": p1, "102": px, "103": p2 };
+  const ev = (fairProbs[oid] * taxFactor * plOdds) - 1;
+
+  const item = {
+    match,
+    league: "Wpis ręczny",
+    bookie,
+    pick: OUTCOME_MAP[oid],
+    plOdds,
+    pinOdds: pinMap[oid],
+    fairProb: fairProbs[oid],
+    ev
+  };
+
+  lastCandidates = [item, ...lastCandidates].sort((a, b) => b.ev - a.ev);
+  renderResults(lastCandidates);
+  setStatus(`Przeliczono ręcznie: ${match} (${item.pick}) -> EV ${(ev * 100).toFixed(2)}%`);
+}
+
+function renderResults(candidates) {
+  const rawStake = parseFloat(document.getElementById("stake").value);
+  const stake = Number.isFinite(rawStake) ? rawStake : 2;
+  const taxFactor = parseFloat(document.getElementById("taxMode").value);
+  const tbody = document.getElementById("candidatesBody");
+  const minEv = (parseFloat(document.getElementById("minEv").value) || 0) / 100;
+
+  if (candidates.length === 0) {
+    document.getElementById("orthoResult").innerHTML =
+      `<p class="error">Brak parowalnych kursów Pinnacle + Fortuna/Superbet dla pobranych meczów.</p>`;
+    document.getElementById("dailyResult").innerHTML = `<p class="error">Brak typu dnia.</p>`;
+    tbody.innerHTML = `<tr><td colspan="7" class="muted">Brak wspólnych kursów w dzisiejszym zapytaniu.</td></tr>`;
+    return;
+  }
+
+  const best = candidates[0];
+
+  if (best.ev > minEv) {
+    const potWin = (stake * taxFactor * best.plOdds).toFixed(2);
+    document.getElementById("orthoResult").innerHTML = `
+      <p><span class="badge badge-pos">+EV +${(best.ev * 100).toFixed(2)}%</span></p>
+      <p><strong>${esc(best.match)}</strong> (${esc(best.league)})</p>
+      <p>Bukmacher: <strong>${esc(best.bookie)}</strong> · Typ: <strong>${esc(best.pick)}</strong> · Kurs: <strong>${best.plOdds.toFixed(2)}</strong></p>
+      <p class="quote">„Przewaga matematyczna jest dodatnia. Wchodzimy płaską stawką ${stake.toFixed(2)} zł (wygrana ${potWin} zł). Bez progresji.”</p>
+      <button class="btn-green" onclick="saveBet(0, 'Ortodoksyjny')">Zapisz do chmury (${stake.toFixed(2)} zł)</button>`;
+  } else {
+    document.getElementById("orthoResult").innerHTML = `
+      <p><span class="badge badge-neg">STAWKA: 0 ZŁ (BRAK +EV)</span></p>
+      <p>Najwyższe EV w ofercie to dziś tylko <strong>${(best.ev * 100).toFixed(2)}%</strong>.</p>
+      <p class="quote">„Przy 12% podatku i tej marży matematyka mówi jasno: dziś nie gramy. Zostaw pieniądze w kieszeni.”</p>`;
+  }
+
+  let d = best;
+  if (document.getElementById("dailyMode").value === "prob") {
+    const pool = candidates.filter(c => c.ev >= -0.10);
+    const base = pool.length ? pool : candidates;
+    d = base.reduce((x, y) => (y.fairProb > x.fairProb ? y : x));
+  }
+  const dIdx = candidates.indexOf(d);
+  const potWinDaily = (stake * taxFactor * d.plOdds).toFixed(2);
+  const badgeClass = d.ev > 0 ? "badge-pos" : "badge-neg";
+  document.getElementById("dailyResult").innerHTML = `
+    <p><span class="badge ${badgeClass}">NAJLEPSZE EV DNIA: ${(d.ev * 100).toFixed(2)}%</span></p>
+    <p><strong>${esc(d.match)}</strong> (${esc(d.league)})</p>
+    <p>Bukmacher: <strong>${esc(d.bookie)}</strong> · Typ: <strong>${esc(d.pick)}</strong> · Kurs: <strong>${d.plOdds.toFixed(2)}</strong></p>
+    <p class="muted" style="font-size:0.88rem;">Szansa na wygraną (Pinnacle bez marży): <strong>${(d.fairProb * 100).toFixed(1)}%</strong> · Wygrana za ${stake.toFixed(2)} zł: <strong>${potWinDaily} zł</strong> · Oczekiwany wynik: <strong>${(stake * d.ev).toFixed(2)} zł</strong></p>
+    <button class="btn-amber" onclick="saveBet(${dIdx}, 'Kupon Dnia')">Zapisz Kupon Dnia (${stake.toFixed(2)} zł)</button>`;
+
+  tbody.innerHTML = candidates.slice(0, 25).map((c, idx) => {
+    const evPct = (c.ev * 100).toFixed(2);
+    const cls = c.ev > 0 ? "badge-pos" : "badge-neg";
+    return `
+      <tr>
+        <td><strong>${esc(c.match)}</strong>${tipBadge(c)}<br><span class="muted" style="font-size:0.78rem;">${esc(c.league)}</span></td>
+        <td>${esc(c.bookie)}</td>
+        <td>${esc(c.pick)}</td>
+        <td><strong>${c.plOdds.toFixed(2)}</strong></td>
+        <td>${c.pinOdds.toFixed(2)} (${(c.fairProb * 100).toFixed(1)}%)</td>
+        <td><span class="badge ${cls}">${evPct}%</span></td>
+        <td><button class="btn-secondary btn-sm" onclick="saveBet(${idx}, 'Ręczny wybór')">Zapisz</button></td>
+      </tr>`;
+  }).join("");
+  renderLogical(candidates);
+}
+
+async function loadHistory() {
+  setHistoryStatus("Ładowanie historii z Supabase...");
+  try {
+    const res = await apiFetch("/api/history");
+    const data = await res.json();
+    if (!res.ok) throw new Error(errMsg(data, res));
+    cachedHistory = Array.isArray(data) ? data : [];
+    renderHistory(cachedHistory);
+    setHistoryStatus(`Zsynchronizowano z chmurą (${cachedHistory.length} kuponów).`);
+  } catch (err) {
+    setHistoryStatus(`Błąd połączenia z bazą: ${err.message}`, true);
+  }
+}
+
+async function saveBet(idx, mode) {
+  const c = lastCandidates[idx];
+  if (!c) return;
+  const today = new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Warsaw" });
+  if (mode !== "Ręczny wybór" && cachedHistory.some(h => h.bet_date === today && h.mode === mode)) {
+    if (!confirm(`Masz już dziś zapisany kupon w trybie ${mode}. Zapisać kolejny?`)) return;
+  }
+
+  const rawStake = parseFloat(document.getElementById("stake").value);
+  const stake = Number.isFinite(rawStake) ? rawStake : 2;
+  const taxFactor = parseFloat(document.getElementById("taxMode").value);
+
+  const payload = {
+    bet_date: today,
+    mode: mode,
+    bookie: c.bookie,
+    match_name: c.match,
+    pick: c.pick,
+    odds: Number(c.plOdds.toFixed(3)),
+    tax_factor: taxFactor,
+    ev_pct: Number((c.ev * 100).toFixed(2)),
+    stake: stake,
+    status: "Oczekuje",
+    net: 0,
+    pin_odds: Number(c.pinOdds.toFixed(3)),
+    fair_prob: Number(c.fairProb.toFixed(4)),
+    fixture_id: c.fixtureId ? String(c.fixtureId) : null
+  };
+
+  setHistoryStatus("Zapisuję kupon w Supabase...");
+  try {
+    const res = await apiFetch("/api/history", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(errMsg(data, res));
+    await loadHistory();
+  } catch (err) {
+    setHistoryStatus(`Nie udało się zapisać kuponu: ${err.message}`, true);
+  }
+}
+
+async function settleBet(id, status) {
+  const item = cachedHistory.find(h => h.id === id);
+  if (!item) return;
+
+  const stake = Number(item.stake);
+  const taxFactor = Number(item.tax_factor);
+  const odds = Number(item.odds);
+  let net = 0;
+
+  if (status === "Wygrany") {
+    net = Number(((stake * taxFactor * odds) - stake).toFixed(2));
+  } else if (status === "Przegrany") {
+    net = Number((-stake).toFixed(2));
+  }
+
+  setHistoryStatus("Aktualizuję wynik w chmurze...");
+  try {
+    const res = await apiFetch("/api/history", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, status, net })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(errMsg(data, res));
+    await loadHistory();
+  } catch (err) {
+    setHistoryStatus(`Błąd aktualizacji: ${err.message}`, true);
+  }
+}
+
+async function deleteBet(id) {
+  if (!confirm("Usunąć ten kupon z bazy?")) return;
+  setHistoryStatus("Usuwam kupon...");
+  try {
+    const res = await apiFetch(`/api/history?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    await loadHistory();
+  } catch (err) {
+    setHistoryStatus(`Błąd usuwania: ${err.message}`, true);
+  }
+}
+
+async function clearHistory() {
+  if (!confirm("Na pewno usunąć całą historię kuponów z bazy Supabase?")) return;
+  setHistoryStatus("Czyszczenie bazy...");
+  try {
+    const res = await apiFetch("/api/history?all=true", { method: "DELETE" });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    await loadHistory();
+  } catch (err) {
+    setHistoryStatus(`Błąd czyszczenia: ${err.message}`, true);
+  }
+}
+
+function renderHistory(hist) {
+  const settled = hist.filter(h => h.status !== "Oczekuje");
+  const totalStaked = settled.reduce((s, h) => s + Number(h.stake), 0);
+  const totalNet = settled.reduce((s, h) => s + Number(h.net), 0);
+  const roi = totalStaked > 0 ? ((totalNet / totalStaked) * 100).toFixed(2) : "0.00";
+  const wins = settled.filter(h => h.status === "Wygrany").length;
+  const expNet = settled.reduce((s, h) => s + Number(h.stake) * Number(h.ev_pct) / 100, 0);
+  const clvs = hist.filter(h => h.clv_pct !== null && h.clv_pct !== undefined).map(h => Number(h.clv_pct));
+  const avgClv = clvs.length ? (clvs.reduce((a, b) => a + b, 0) / clvs.length).toFixed(2) + "%" : "–";
+
+  document.getElementById("statsBox").innerHTML = `
+    <div class="stat-box"><div class="stat-label">Zapisane kupony</div><div class="stat-val">${hist.length}</div></div>
+    <div class="stat-box"><div class="stat-label">Rozliczone / Wygrane</div><div class="stat-val">${settled.length} / ${wins}</div></div>
+    <div class="stat-box"><div class="stat-label">Łączna stawka (rozl.)</div><div class="stat-val">${totalStaked.toFixed(2)} zł</div></div>
+    <div class="stat-box"><div class="stat-label">Bilans netto</div><div class="stat-val" style="color:${totalNet >= 0 ? 'var(--green)' : 'var(--red)'}">${totalNet >= 0 ? '+' : ''}${totalNet.toFixed(2)} zł</div></div>
+    <div class="stat-box"><div class="stat-label">Yield / ROI</div><div class="stat-val">${roi}%</div></div>
+    <div class="stat-box"><div class="stat-label">Oczekiwany bilans (EV)</div><div class="stat-val">${expNet >= 0 ? '+' : ''}${expNet.toFixed(2)} zł</div></div>
+    <div class="stat-box"><div class="stat-label">Średnie CLV</div><div class="stat-val">${avgClv}</div></div>`;
+
+  const tbody = document.getElementById("historyBody");
+  if (hist.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="10" class="muted">Brak zapisanych kuponów w bazie.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = hist.map(h => {
+    const odds = Number(h.odds);
+    const stake = Number(h.stake);
+    const net = Number(h.net);
+    const netColor = net > 0 ? "var(--green)" : (net < 0 ? "var(--red)" : "var(--muted)");
+    const netLabel = h.status === "Oczekuje" ? "-" : ((net >= 0 ? "+" : "") + net.toFixed(2) + " zł");
+    return `
+      <tr>
+        <td>${esc(h.bet_date)}</td>
+        <td>${esc(h.mode)}</td>
+        <td>${esc(h.bookie)}</td>
+        <td><strong>${esc(h.match_name)}</strong><br><span class="muted" style="font-size:0.78rem;">${esc(h.pick)}</span></td>
+        <td>${odds.toFixed(2)}</td>
+        <td>${Number(h.ev_pct).toFixed(2)}%</td>
+        <td>${stake.toFixed(2)} zł</td>
+        <td><strong>${esc(h.status)}</strong></td>
+        <td style="color:${netColor}">${netLabel}</td>
+        <td>
+          <button class="btn-green btn-sm" onclick="settleBet(${h.id}, 'Wygrany')">W</button>
+          <button class="btn-red btn-sm" onclick="settleBet(${h.id}, 'Przegrany')">P</button>
+          <button class="btn-secondary btn-sm" onclick="settleBet(${h.id}, 'Zwrot')">Z</button>
+          <button class="btn-amber btn-sm" onclick="setClv(${h.id})">C</button>
+          <button class="btn-red btn-sm" onclick="deleteBet(${h.id})">X</button>
+        </td>
+      </tr>`;
+  }).join("");
+}
+
+async function setClv(id) {
+  const item = cachedHistory.find(h => h.id === id);
+  if (!item) return;
+  const raw = prompt("Końcowy kurs Pinnacle na ten typ (tuż przed meczem):");
+  const closing = parseFloat(String(raw ?? "").replace(",", "."));
+  if (!Number.isFinite(closing) || closing <= 1) return;
+  const clv = Number(((Number(item.odds) / closing - 1) * 100).toFixed(2));
+  try {
+    const res = await apiFetch("/api/history", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, clv_pct: clv })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(errMsg(data, res));
+    await loadHistory();
+  } catch (err) {
+    setHistoryStatus(`Błąd zapisu CLV: ${err.message}`, true);
+  }
+}
+
+function exportCSV() {
+  if (cachedHistory.length === 0) return alert("Historia jest pusta.");
+  const headers = ["Data", "Tryb", "Bukmacher", "Mecz", "Typ", "Kurs", "EV%", "Stawka", "Status", "BilansNetto"];
+  const rows = cachedHistory.map(h => [
+    h.bet_date,
+    h.mode,
+    h.bookie,
+    `"${String(h.match_name).replace(/"/g, '""')}"`,
+    h.pick,
+    h.odds,
+    h.ev_pct,
+    h.stake,
+    h.status,
+    h.net
+  ].join(","));
+  const csv = [headers.join(","), ...rows].join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "historia_doktor_krzywkowski.csv";
+  a.click();
+}
+</script>
+</body>
+</html>
