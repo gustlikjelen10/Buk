@@ -430,6 +430,7 @@ async function fetchTodayOdds() {
 
     const selectedFixtures = fixtures.slice(0, maxMatches);
     const candidates = [];
+    const diag = [];
 
     for (let i = 0; i < selectedFixtures.length; i++) {
       const f = selectedFixtures[i];
@@ -437,7 +438,14 @@ async function fetchTodayOdds() {
       const oddsRes = await apiFetch(`/api/oddspapi?action=odds&fixtureId=${encodeURIComponent(f.fixtureId)}`);
       if (oddsRes.ok) {
         const oddsData = await oddsRes.json();
-        candidates.push(...extractCandidatesFromFixture(f, oddsData, taxFactor));
+        const found = extractCandidatesFromFixture(f, oddsData, taxFactor);
+        candidates.push(...found);
+        const bo = oddsData?.bookmakerOdds;
+        diag.push(`${f.participant1Name} - ${f.participant2Name} (${f.tournamentName ?? "?"}): ` +
+          (bo ? `bukmacherzy: ${Object.keys(bo).join(", ") || "brak"}` : `pola odpowiedzi: ${Object.keys(oddsData || {}).join(", ") || "brak"}`) +
+          ` -> typów: ${found.length}`);
+      } else {
+        diag.push(`${f.participant1Name} - ${f.participant2Name}: HTTP ${oddsRes.status}`);
       }
       await new Promise(r => setTimeout(r, 250));
     }
@@ -445,7 +453,8 @@ async function fetchTodayOdds() {
     candidates.sort((a, b) => b.ev - a.ev);
     lastCandidates = candidates;
     renderResults(candidates);
-    setStatus(`Gotowe! Przeanalizowano ${selectedFixtures.length} meczów i znaleziono ${candidates.length} porównanych typów.`);
+    setStatus(`Gotowe! Przeanalizowano ${selectedFixtures.length} meczów i znaleziono ${candidates.length} porównanych typów.` +
+      (candidates.length === 0 ? "\n\nDiagnostyka:\n" + diag.join("\n") : ""));
   } catch (err) {
     setStatus(`Nie udało się pobrać kursów: ${err.message}`, true);
   } finally {
