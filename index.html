@@ -446,7 +446,7 @@ async function fetchTodayOdds() {
           if (!b) return `${slug}: brak`;
           const pp = getMarket101Prices(b);
           const mk = Object.keys(b.markets || {}).slice(0, 6).join("/") || "brak";
-          let t = `${slug}: aktywny=${b.bookmakerIsActive}, rynki=${mk}, 1X2=${pp ? "ok" : "NIE"}`;
+          let t = `${slug}: aktywny=${b.bookmakerIsActive}, rynki=${mk}, 1X2=${pp ? "ok " + pp["101"] + "/" + pp["102"] + "/" + pp["103"] + " marża " + ((1 / pp["101"] + 1 / pp["102"] + 1 / pp["103"] - 1) * 100).toFixed(1) + "%" : "NIE"}`;
           if (!pp) t += ` raw101=${JSON.stringify(b.markets?.["101"] ?? null).slice(0, 260)}`;
           return t;
         };
@@ -516,7 +516,7 @@ function extractCandidatesFromFixture(fixture, oddsData, taxFactor) {
       if (!sel) continue;
       if (sel.active === false) continue;
       if (!sel.price) continue;
-      if (sel.price < 1.5 || sel.price > 4.5) continue;
+      if (sel.price < 1.2 || sel.price > 8) continue;
 
       const ev = (fairProbs[oid] * taxFactor * sel.price) - 1;
       out.push({
