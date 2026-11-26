@@ -428,7 +428,14 @@ async function fetchTodayOdds() {
       return aTop - bTop;
     });
 
-    const selectedFixtures = fixtures.slice(0, maxMatches);
+    const isReal = f => !/\bSRL\b|simulated|esoccer|e-soccer|cyber|virtual/i.test(
+      `${f.participant1Name} ${f.participant2Name} ${f.tournamentName ?? ""}`);
+    const realFixtures = fixtures.filter(isReal);
+    if (realFixtures.length === 0) {
+      setStatus("W najbliższych 36h są tylko mecze wirtualne (SRL) — brak prawdziwych spotkań z kursami.", true);
+      return;
+    }
+    const selectedFixtures = realFixtures.slice(0, maxMatches);
     const candidates = [];
     const diag = [];
 
